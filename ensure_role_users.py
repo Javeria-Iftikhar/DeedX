@@ -1,3 +1,10 @@
+"""
+ensure_role_users.py — Create Admin, Officer, and Economic Analyst dev accounts.
+
+Run anytime (safe to re-run):
+    python ensure_role_users.py
+"""
+
 import os
 import sys
 from datetime import datetime, timezone
@@ -60,14 +67,13 @@ ROLE_USERS = [
 def ensure_role_users():
     db = SessionLocal()
     try:
-        for spec in ROLE_USERS
+        for spec in ROLE_USERS:
             user = db.query(models.User).filter(models.User.email == spec["email"]).first()
-
             if not user:
                 user = models.User(
                     name=spec["name"],
                     email=spec["email"],
-                    password=hash_password(spec["password"]
+                    password=hash_password(spec["password"]),
                 )
                 db.add(user)
                 db.flush()
@@ -75,8 +81,9 @@ def ensure_role_users():
             else:
                 user.name = spec["name"]
                 user.password = hash_password(spec["password"])
+                print(f"Updated password: {spec['email']}")
 
-            if spec["role"] == "admin" and not db.query(models.Admin).filter(models.Admin.user_id == user.user_id).first()
+            if spec["role"] == "admin" and not db.query(models.Admin).filter(models.Admin.user_id == user.user_id).first():
                 admin_fields = spec.get("admin") or {}
                 db.add(models.Admin(
                     user_id=user.user_id,
@@ -84,12 +91,15 @@ def ensure_role_users():
                     access_scope=admin_fields.get("access_scope", "full"),
                     last_login=datetime.now(timezone.utc),
                 ))
+                print(f"  -> assigned Admin role")
 
             if spec["role"] == "officer" and not db.query(models.Officer).filter(models.Officer.user_id == user.user_id).first():
-                db.add(models.Officer(user_id=user.user_id, **spec["officer"])
+                db.add(models.Officer(user_id=user.user_id, **spec["officer"]))
+                print(f"  -> assigned Officer role")
 
             if spec["role"] == "analyst" and not db.query(models.EconomicAnalyst).filter(models.EconomicAnalyst.user_id == user.user_id).first():
                 db.add(models.EconomicAnalyst(user_id=user.user_id, **spec["analyst"]))
+                print(f"  -> assigned Economic Analyst role")
 
         db.commit()
         print("\nDev login credentials:")
@@ -99,5 +109,5 @@ def ensure_role_users():
         db.close()
 
 
-if __name__ == "__main__"
+if __name__ == "__main__":
     ensure_role_users()
